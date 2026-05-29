@@ -1,7 +1,7 @@
 ---
 name: code-modification-guidelines
 description: Mandatory workflow and safety rules for AI assistants when modifying existing codebases.
------------------------------------------------------------------------------------------------------
+---
 
 # Code Modification Guidelines
 
@@ -11,12 +11,12 @@ This document defines the mandatory workflow, constraints, and best practices fo
 
 The primary goal is to ensure that all code modifications are:
 
-* Safe
-* Minimal
-* Traceable
-* Reviewable
-* Backward compatible
-* Easy to verify and rollback
+- Safe
+- Minimal
+- Traceable
+- Reviewable
+- Backward compatible
+- Easy to verify and rollback
 
 The assistant MUST follow these guidelines whenever modifying existing code unless the user explicitly overrides them.
 
@@ -30,11 +30,11 @@ Modify only the code required to solve the requested problem.
 
 Do NOT:
 
-* Refactor unrelated code
-* Reformat unrelated sections
-* Rename symbols without necessity
-* "Improve" surrounding code without instruction
-* Introduce architectural changes unless requested
+- Refactor unrelated code
+- Reformat unrelated sections
+- Rename symbols without necessity
+- "Improve" surrounding code without instruction
+- Introduce architectural changes unless requested
 
 Avoid "drive-by" modifications.
 
@@ -46,13 +46,13 @@ Preserve existing behavior, APIs, interfaces, side effects, and execution order 
 
 The assistant MUST NOT silently:
 
-* Change function signatures
-* Modify return structures
-* Alter timing behavior
-* Change async/sync semantics
-* Change error handling behavior
-* Remove deprecated APIs
-* Change public interfaces
+- Change function signatures
+- Modify return structures
+- Alter timing behavior
+- Change async/sync semantics
+- Change error handling behavior
+- Remove deprecated APIs
+- Change public interfaces
 
 If breaking changes are necessary, they MUST be explicitly documented.
 
@@ -62,10 +62,10 @@ If breaking changes are necessary, they MUST be explicitly documented.
 
 Any modification that could potentially introduce regressions, behavioral changes, or compatibility risks MUST include:
 
-* Risk assessment
-* Impact scope
-* Rollback strategy
-* Verification steps
+- Risk assessment
+- Impact scope
+- Rollback strategy
+- Verification steps
 
 High-risk modifications MUST be clearly warned about before execution.
 
@@ -75,10 +75,10 @@ High-risk modifications MUST be clearly warned about before execution.
 
 Every modification MUST include:
 
-* A validation method
-* Expected behavior
-* Affected scenarios
-* Suggested test cases
+- A validation method
+- Expected behavior
+- Affected scenarios
+- Suggested test cases
 
 Changes should be easy to review and verify.
 
@@ -90,10 +90,10 @@ All meaningful modifications SHOULD be traceable.
 
 When appropriate:
 
-* Add modification comments
-* Preserve previous implementations temporarily
-* Explain WHY the change exists
-* Explain expected impact
+- Add modification comments
+- Preserve previous implementations temporarily
+- Explain WHY the change exists
+- Explain expected impact
 
 Do not make unexplained behavioral changes.
 
@@ -105,12 +105,12 @@ Follow the existing project conventions.
 
 This includes:
 
-* Naming style
-* Formatting style
-* File organization
-* Error handling patterns
-* Async patterns
-* Architectural conventions
+- Naming style
+- Formatting style
+- File organization
+- Error handling patterns
+- Async patterns
+- Architectural conventions
 
 Do NOT modernize legacy code unless explicitly requested.
 
@@ -123,26 +123,22 @@ Do NOT modernize legacy code unless explicitly requested.
 Before writing or modifying code, the assistant MUST:
 
 1. Understand the original intent
-
-   * Read surrounding code
-   * Read comments and documentation
-   * Understand why the code exists
+   - Read surrounding code
+   - Read comments and documentation
+   - Understand why the code exists
 
 2. Identify dependencies
-
-   * What calls this code?
-   * What depends on its behavior?
-   * Is it public or internal?
+   - What calls this code?
+   - What depends on its behavior?
+   - Is it public or internal?
 
 3. Assess impact scope
-
-   * Which files/functions/modules are affected?
-   * Are side effects possible?
-   * Could this affect runtime behavior?
+   - Which files/functions/modules are affected?
+   - Are side effects possible?
+   - Could this affect runtime behavior?
 
 4. Detect risk level
-
-   * Low / Medium / High
+   - Low / Medium / High
 
 5. Produce an assessment report BEFORE modification
 
@@ -156,11 +152,9 @@ Use the following structure:
 
 ```yaml
 Solution Structure:
-  Goal:
-    One-sentence description of the problem being solved
+  Goal: One-sentence description of the problem being solved
 
-  Description:
-    Brief explanation of the chosen approach
+  Description: Brief explanation of the chosen approach
 
   Files Changed:
     - file1
@@ -205,10 +199,10 @@ Modification Rules:
 
 Before deleting important code:
 
-* Explain why deletion is safe
-* Prefer deprecation over removal
-* Comment out code temporarily when appropriate
-* Mention potentially affected callers
+- Explain why deletion is safe
+- Prefer deprecation over removal
+- Comment out code temporarily when appropriate
+- Mention potentially affected callers
 
 ---
 
@@ -216,10 +210,10 @@ Before deleting important code:
 
 When refactoring:
 
-* Keep public interfaces stable
-* Preserve old signatures with `@deprecated`
-* Avoid large-scale rewrites
-* Keep migration paths clear
+- Keep public interfaces stable
+- Preserve old signatures with `@deprecated`
+- Avoid large-scale rewrites
+- Keep migration paths clear
 
 ---
 
@@ -261,16 +255,16 @@ Output Content:
 
 The assistant MUST NOT:
 
-* ❌ Delete comments without reason
-* ❌ Reformat entire files
-* ❌ Rewrite working code unnecessarily
-* ❌ Rename identifiers without necessity
-* ❌ Change coding style across files
-* ❌ Introduce new frameworks/libraries without approval
-* ❌ Modify unrelated code paths
-* ❌ Silently change behavior
-* ❌ Assume missing requirements
-* ❌ Over-engineer simple fixes
+- ❌ Delete comments without reason
+- ❌ Reformat entire files
+- ❌ Rewrite working code unnecessarily
+- ❌ Rename identifiers without necessity
+- ❌ Change coding style across files
+- ❌ Introduce new frameworks/libraries without approval
+- ❌ Modify unrelated code paths
+- ❌ Silently change behavior
+- ❌ Assume missing requirements
+- ❌ Over-engineer simple fixes
 
 ---
 
@@ -278,11 +272,11 @@ The assistant MUST NOT:
 
 The following are allowed ONLY if documented:
 
-* ✅ Fix obvious typos
-* ✅ Add missing imports
-* ✅ Remove confirmed unused variables
-* ✅ Add defensive null checks
-* ✅ Improve comments for clarity
+- ✅ Fix obvious typos
+- ✅ Add missing imports
+- ✅ Remove confirmed unused variables
+- ✅ Add defensive null checks
+- ✅ Improve comments for clarity
 
 All incidental improvements MUST be mentioned in the report.
 
@@ -342,11 +336,11 @@ Describe:
 
 Include:
 
-* Breaking changes
-* Manual migration steps
-* Compatibility concerns
-* Potentially affected callers
-* Rollback guidance
+- Breaking changes
+- Manual migration steps
+- Compatibility concerns
+- Potentially affected callers
+- Rollback guidance
 
 ---
 
@@ -420,13 +414,13 @@ Verify compatibility before deployment.
 
 Before responding, the assistant MUST confirm:
 
-* [ ] Did I fully understand the requested change?
-* [ ] Did I assess impact scope?
-* [ ] Did I minimize modifications?
-* [ ] Did I preserve backward compatibility?
-* [ ] Did I avoid unrelated refactoring?
-* [ ] Did I explain risks?
-* [ ] Did I provide verification steps?
-* [ ] Did I preserve existing style?
-* [ ] Did I avoid silent behavior changes?
-* [ ] Did I document incidental improvements?
+- [ ] Did I fully understand the requested change?
+- [ ] Did I assess impact scope?
+- [ ] Did I minimize modifications?
+- [ ] Did I preserve backward compatibility?
+- [ ] Did I avoid unrelated refactoring?
+- [ ] Did I explain risks?
+- [ ] Did I provide verification steps?
+- [ ] Did I preserve existing style?
+- [ ] Did I avoid silent behavior changes?
+- [ ] Did I document incidental improvements?
