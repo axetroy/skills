@@ -1,426 +1,233 @@
 ---
 name: code-modification-guidelines
-description: Mandatory workflow and safety rules for AI assistants when modifying existing codebases.
+description: AI 助手在修改现有代码库时必须遵循的工作流与安全规则
 ---
 
 # Code Modification Guidelines
 
-## Overview
+## 目标
 
-This document defines the mandatory workflow, constraints, and best practices for AI assistants when modifying existing code.
+本规范用于约束 AI 在修改现有代码时的行为，确保修改：
 
-The primary goal is to ensure that all code modifications are:
-
-- Safe
-- Minimal
-- Traceable
-- Reviewable
-- Backward compatible
-- Easy to verify and rollback
-
-The assistant MUST follow these guidelines whenever modifying existing code unless the user explicitly overrides them.
+- 安全
+- 可控
+- 最小化
+- 向后兼容
+- 不破坏系统稳定性
 
 ---
 
-# Core Principles
+# 一、核心原则
 
-## 1. Minimum Change Principle
+## 1. 最小变更原则
 
-Modify only the code required to solve the requested problem.
+仅允许修改为完成任务所必需的代码。
 
-Do NOT:
+禁止进行以下行为：
 
-- Refactor unrelated code
-- Reformat unrelated sections
-- Rename symbols without necessity
-- "Improve" surrounding code without instruction
-- Introduce architectural changes unless requested
-
-Avoid "drive-by" modifications.
+- 修改无关代码
+- 重构未涉及的模块
+- 全局格式化或风格统一
+- 随意重命名变量或函数
+- 进行“顺手优化”或主观改进
 
 ---
 
-## 2. Backward Compatibility
+## 2. 向后兼容原则
 
-Preserve existing behavior, APIs, interfaces, side effects, and execution order unless explicitly instructed otherwise.
+必须保持现有系统行为一致，除非用户明确要求变更。
 
-The assistant MUST NOT silently:
+禁止：
 
-- Change function signatures
-- Modify return structures
-- Alter timing behavior
-- Change async/sync semantics
-- Change error handling behavior
-- Remove deprecated APIs
-- Change public interfaces
+- 修改函数签名或接口
+- 改变返回结构
+- 改变同步/异步行为
+- 修改错误处理逻辑
+- 删除或更改公共 API
+- 改变执行顺序或副作用
 
-If breaking changes are necessary, they MUST be explicitly documented.
-
----
-
-## 3. Safety First
-
-Any modification that could potentially introduce regressions, behavioral changes, or compatibility risks MUST include:
-
-- Risk assessment
-- Impact scope
-- Rollback strategy
-- Verification steps
-
-High-risk modifications MUST be clearly warned about before execution.
+任何破坏性变更必须显式说明并确认。
 
 ---
 
-## 4. Verifiable Changes
+## 3. 行为透明原则
 
-Every modification MUST include:
+所有行为变化必须是显式的，不得隐式改变逻辑。
 
-- A validation method
-- Expected behavior
-- Affected scenarios
-- Suggested test cases
+禁止：
 
-Changes should be easy to review and verify.
-
----
-
-## 5. Traceable Modifications
-
-All meaningful modifications SHOULD be traceable.
-
-When appropriate:
-
-- Add modification comments
-- Preserve previous implementations temporarily
-- Explain WHY the change exists
-- Explain expected impact
-
-Do not make unexplained behavioral changes.
+- 静默改变业务逻辑
+- 隐式优化行为
+- 未说明的兼容性调整
+- 未声明的行为修复
 
 ---
 
-## 6. Preserve Existing Style
+## 4. 安全优先原则
 
-Follow the existing project conventions.
+所有修改必须优先考虑系统稳定性与兼容性。
 
-This includes:
+高风险变更必须满足：
 
-- Naming style
-- Formatting style
-- File organization
-- Error handling patterns
-- Async patterns
-- Architectural conventions
-
-Do NOT modernize legacy code unless explicitly requested.
+- 明确风险点
+- 明确影响范围
+- 明确回滚方式
+- 明确验证方式
 
 ---
 
-# Mandatory Workflow
+## 5. 可验证原则
 
-# Phase 1: Understand & Assess (Required)
+所有修改必须能够被验证其正确性。
 
-Before writing or modifying code, the assistant MUST:
+必须保证：
 
-1. Understand the original intent
-   - Read surrounding code
-   - Read comments and documentation
-   - Understand why the code exists
-
-2. Identify dependencies
-   - What calls this code?
-   - What depends on its behavior?
-   - Is it public or internal?
-
-3. Assess impact scope
-   - Which files/functions/modules are affected?
-   - Are side effects possible?
-   - Could this affect runtime behavior?
-
-4. Detect risk level
-   - Low / Medium / High
-
-5. Produce an assessment report BEFORE modification
+- 修改结果可测试
+- 行为变化可观察
+- 边界情况可覆盖
+- 回归风险可检查
 
 ---
 
-# Phase 2: Propose Solution
+## 6. 风格一致原则
 
-The assistant MUST describe the modification plan before generating code.
+必须遵循项目现有代码风格，不得引入新的编码规范。
 
-Use the following structure:
+禁止：
 
-```yaml
-Solution Structure:
-  Goal: One-sentence description of the problem being solved
-
-  Description: Brief explanation of the chosen approach
-
-  Files Changed:
-    - file1
-    - file2
-
-  Risk Points:
-    - Potential issue
-    - Compatibility concern
-    - Regression possibility
-
-  Rollback Plan:
-    - How to revert safely
-
-  Alternatives:
-    - Optional alternative approaches
-```
+- 改变整体代码风格
+- 引入新的架构范式
+- 统一格式化已有代码
+- 无必要的现代化改造
 
 ---
 
-# Phase 3: Execute Modification
+# 二、修改流程要求
 
-## Modification Rules
+## 阶段 1：分析阶段（必须先执行）
 
-```yaml
-Modification Rules:
-  - Follow the minimum change principle
-  - Preserve backward compatibility
-  - Keep surrounding code untouched
-  - Add comments when behavior changes
-  - Do not silently change logic
-  - Keep deprecated APIs when possible
-  - Use named constants instead of magic numbers
-  - Follow existing project style
-  - Preserve existing comments
-  - Avoid unnecessary refactoring
-  - When adding/modifying code comments or descriptions, the language used should be consistent with that of the rest of the code.
-```
+在任何代码修改之前，必须完成以下分析：
 
----
+### 1. 原始意图理解
 
-## Deletion Rules
+- 理解代码存在的目的
+- 理解业务语义
+- 理解上下文逻辑
 
-Before deleting important code:
+### 2. 依赖分析
 
-- Explain why deletion is safe
-- Prefer deprecation over removal
-- Comment out code temporarily when appropriate
-- Mention potentially affected callers
+- 调用关系
+- 被依赖范围
+- 是否为公共接口
 
----
+### 3. 影响范围分析
 
-## Refactoring Rules
+- 涉及模块
+- 潜在副作用
+- 运行时影响
 
-When refactoring:
+### 4. 风险评估
 
-- Keep public interfaces stable
-- Preserve old signatures with `@deprecated`
-- Avoid large-scale rewrites
-- Keep migration paths clear
+必须对变更进行风险分级：
+
+- 低风险：局部、无行为变化
+- 中风险：可能影响部分调用链
+- 高风险：可能影响系统行为或接口
 
 ---
 
-# Phase 4: Validate & Output
+## 阶段 2：方案确认
 
-The assistant MUST provide:
+在实施修改前必须完成方案确认，包括：
 
-```yaml
-Output Content:
-  - Assessment report
-  - Solution proposal
-  - Complete modified code
-  - Line-by-line change summary
-  - Verification steps
-  - Risk reminders
-  - Rollback guidance
-```
+- 修改目的是否清晰
+- 修改范围是否最小
+- 是否存在替代方案
+- 是否存在破坏性变更
+- 是否具备回滚路径
+
+未确认方案不得进入代码修改阶段。
 
 ---
 
-# Specific Constraints
+## 阶段 3：执行修改
 
-## Language-Specific Rules
+执行修改时必须遵守：
 
-| Language   | Constraints                                             |
-| ---------- | ------------------------------------------------------- |
-| Python     | Follow PEP8; avoid unnecessary import reordering        |
-| JavaScript | Preserve `this` behavior; keep async style consistent   |
-| TypeScript | Preserve type safety; avoid weakening types             |
-| Java       | Keep package paths unchanged; preserve serialVersionUID |
-| Go         | Preserve existing error handling patterns               |
-| Rust       | Do not alter lifetimes unnecessarily                    |
-| C/C++      | Avoid changing memory ownership semantics               |
-| Shell      | Preserve exit codes and environment behavior            |
+- 只修改必要代码
+- 不修改无关逻辑
+- 保持原有结构稳定
+- 保留旧行为兼容性
+- 避免跨模块连锁修改
+- 修改必须具备明确理由
 
----
+允许的行为仅限于：
 
-# Prohibited Actions
-
-The assistant MUST NOT:
-
-- ❌ Delete comments without reason
-- ❌ Reformat entire files
-- ❌ Rewrite working code unnecessarily
-- ❌ Rename identifiers without necessity
-- ❌ Change coding style across files
-- ❌ Introduce new frameworks/libraries without approval
-- ❌ Modify unrelated code paths
-- ❌ Silently change behavior
-- ❌ Assume missing requirements
-- ❌ Over-engineer simple fixes
+- 修复明确 bug
+- 补充缺失依赖
+- 删除已确认未使用代码
+- 添加必要防御性逻辑
 
 ---
 
-# Permitted Incidental Improvements
+## 阶段 4：验证要求
 
-The following are allowed ONLY if documented:
+所有修改必须满足验证要求：
 
-- ✅ Fix obvious typos
-- ✅ Add missing imports
-- ✅ Remove confirmed unused variables
-- ✅ Add defensive null checks
-- ✅ Improve comments for clarity
-
-All incidental improvements MUST be mentioned in the report.
+- 修改行为可验证
+- 影响范围可确认
+- 回归风险可评估
+- 可通过测试或观察验证正确性
 
 ---
 
-# Output Format Template
+# 三、禁止行为
 
-The assistant MUST use the following structure when responding to code modification requests.
+严格禁止以下行为：
 
-## 📋 Modification Assessment
-
-**Goal**:
-[One sentence]
-
-**Impact Scope**:
-[List affected files/functions/modules]
-
-**Risk Level**:
-🟢 Low / 🟡 Medium / 🔴 High
-
----
-
-## 🔧 Proposed Solution
-
-[Brief explanation of the modification approach]
+- 擅自重写功能正常代码
+- 修改未涉及的文件或模块
+- 改变公共接口或契约
+- 引入新框架或依赖
+- 未经说明改变逻辑行为
+- 删除未确认安全的代码
+- 改变代码整体风格
+- 进行大范围结构重构
+- 做出无明确需求的优化
+- 假设用户未说明的需求
 
 ---
 
-## 📝 Change Details
+# 四、语言一致性约束
 
-| Line | Original | New | Reason |
-| ---- | -------- | --- | ------ |
-| ...  | ...      | ... | ...    |
+不同语言必须保持其原有语义和工程约束：
 
----
-
-## ✅ Modified Code
-
-```language
-// Complete modified code
-```
+- JavaScript / TypeScript：保持 this 与异步行为一致
+- Python：遵循既有风格与语义，不强制重排结构
+- Java：保持包结构与序列化兼容性
+- Go：保持错误处理模式一致
+- Rust：避免不必要的生命周期变化
+- C/C++：不得改变内存语义
+- Shell：不得改变退出状态或环境行为
 
 ---
 
-## 🧪 Verification Method
+# 五、附加原则
 
-Describe:
+## 1. 不确定性原则
 
-1. How to test
-2. Expected output
-3. Edge cases
-4. Regression checks
+当需求或影响不明确时，应倾向于保守修改，而不是扩展修改范围。
 
----
+## 2. 显式优于隐式
 
-## ⚠️ Important Notes
+任何行为变化必须显式体现，不得依赖“默认优化”。
 
-Include:
+## 3. 稳定性优先
 
-- Breaking changes
-- Manual migration steps
-- Compatibility concerns
-- Potentially affected callers
-- Rollback guidance
+在功能正确性与系统稳定性之间，优先保证稳定性。
+
+## 4. 可回滚性
+
+任何修改都必须可以安全撤销，不应造成不可逆影响。
 
 ---
-
-# Example
-
-## 📋 Modification Assessment
-
-**Goal**:
-Improve sorting performance from O(n²) to O(n log n)
-
-**Impact Scope**:
-`sort_items()` function only
-
-**Risk Level**:
-🟡 Medium
-
----
-
-## 🔧 Proposed Solution
-
-Replace manual bubble sort with Python's built-in Timsort while preserving sorting semantics.
-
----
-
-## 📝 Change Details
-
-| Line  | Original         | New               | Reason              |
-| ----- | ---------------- | ----------------- | ------------------- |
-| 23-27 | Bubble sort loop | `items.sort(...)` | Improve performance |
-
----
-
-## ✅ Modified Code
-
-```python
-def sort_items(items):
-    # MODIFIED:
-    # Replaced manual bubble sort with Python Timsort.
-    # Expected behavior remains unchanged.
-    items.sort(key=lambda x: x.priority)
-    return items
-```
-
----
-
-## 🧪 Verification Method
-
-Run:
-
-```bash
-python test_sort.py
-```
-
-Verify:
-
-1. Sorting output matches previous behavior
-2. Empty arrays work
-3. Duplicate values preserve ordering
-4. `None` handling still works
-
----
-
-## ⚠️ Important Notes
-
-The original implementation had implicit handling for `None` values.
-Verify compatibility before deployment.
-
----
-
-# Self-Check Checklist
-
-Before responding, the assistant MUST confirm:
-
-- [ ] Did I fully understand the requested change?
-- [ ] Did I assess impact scope?
-- [ ] Did I minimize modifications?
-- [ ] Did I preserve backward compatibility?
-- [ ] Did I avoid unrelated refactoring?
-- [ ] Did I explain risks?
-- [ ] Did I provide verification steps?
-- [ ] Did I preserve existing style?
-- [ ] Did I avoid silent behavior changes?
-- [ ] Did I document incidental improvements?
