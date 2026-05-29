@@ -1,307 +1,251 @@
 ---
 name: nodapt
-description: Use this skill to execute commands when a user requests to run nodejs/npm commands, and you can specify the desired nodejs version.
+description: 当用户请求执行 Node.js / npm 命令时使用该技能，并允许指定 Node.js 版本。
 ---
 
 # Nodapt
 
-nodapt is a virtual Node.js environment designed to provide a simple and reliable version management tool for Node.js projects. It can automatically select and install the appropriate version of Node.js based on the version constraints in `package.json` and run commands.
+nodapt 是一个虚拟 Node.js 运行环境，旨在为 Node.js 项目提供简单可靠的版本管理工具。它可以根据 `package.json` 中的版本约束自动选择并安装合适的 Node.js 版本，并执行相关命令。
 
-If your `package.json` file contains Node.js version constraints, or if the user explicitly requests to run Node.js with a specific version or manage installed versions, then you should use this skill to run the command.
+如果 `package.json` 中包含 Node.js 版本约束，或者用户明确要求使用特定 Node.js 版本或管理已安装版本，则应使用此技能执行命令。
 
-If the user requests to use or remove a specific Node.js version but does not provide a valid version format, ask the user to clarify the desired version before executing the command.
+如果用户要求使用或删除某个 Node.js 版本，但未提供有效版本格式，应在执行前请求用户明确具体版本。
 
-If the user does not have nodapt installed, you can suggest them to install it using the instructions in the [Installation](#installation) section below.
+如果用户未安装 nodapt，可以建议其按照下方“安装”部分进行安装。
 
-## When to Use This Skill
+---
 
-Use this skill when:
+## 使用场景
 
-1. Running any Node.js or npm command in a project
-2. The project's `package.json` specifies a Node.js version in `engines.node`
-3. The user explicitly requests a specific Node.js version
-4. Managing (installing, removing, listing) Node.js versions
-5. The user mentions "nodapt" or asks about Node.js version management
+在以下情况下使用该技能：
 
-## Basic Usage Patterns
+1. 执行任何 Node.js 或 npm 命令
+2. 项目 `package.json` 中包含 `engines.node` 版本约束
+3. 用户明确指定 Node.js 版本
+4. 管理 Node.js 版本（安装 / 删除 / 列出）
+5. 用户提到 “nodapt” 或 Node.js 版本管理
 
-### 1. Automatic Version Selection
+---
 
-Run commands with the Node.js version specified in `package.json`:
+## 基本用法
+
+### 1. 自动版本选择
+
+根据 `package.json` 自动选择 Node.js 版本执行命令：
 
 ```bash
-# Run node command with auto-detected version
 nodapt node -v
-
-# Run npm command
 nodapt npm install
-
-# Run any node-based tool
 nodapt npx create-react-app my-app
 ```
 
-### 2. Specify Node.js Version
+---
 
-Use a specific Node.js version for a command:
+### 2. 指定 Node.js 版本
+
+使用指定版本运行命令：
 
 ```bash
-# Use exact version
 nodapt use v14.17.0 node app.js
-
-# Use major version (latest 22.x)
 nodapt use 22 node script.js
-
-# Use semantic versioning
 nodapt use ^16.14.0 npm test
 ```
 
-### 3. Version Management Commands
+---
 
-List installed versions:
+### 3. 版本管理
+
+列出已安装版本：
 
 ```bash
 nodapt ls
-# Example output:
-# v14.17.0
-# v16.20.2
-# v18.18.0
 ```
 
-List available remote versions:
+列出可用远程版本：
 
 ```bash
 nodapt ls-remote
 ```
 
-Remove a specific version:
+删除指定版本：
 
 ```bash
 nodapt rm v14.17.0
 ```
 
-Clean all installed versions:
+清理所有已安装版本：
 
 ```bash
 nodapt clean
 ```
 
-## Common Scenarios
+---
 
-### Scenario 1: Running a Project with Version Constraints
+## 常见场景
 
-When a user asks to run a project, first check if `package.json` exists and has Node.js version constraints:
+### 场景 1：基于版本约束运行项目
 
-```bash
-# Example package.json
+若 `package.json` 包含 `engines.node`：
+
+```json
 {
   "engines": {
     "node": ">=16.0.0 <19.0.0"
   }
 }
+```
 
-# Run the project
+执行：
+
+```bash
 nodapt npm start
 ```
 
-### Scenario 2: Testing Across Node.js Versions
+---
 
-When a user needs to test code with different Node.js versions:
+### 场景 2：多版本测试
 
 ```bash
-# Test with Node.js 14
 nodapt use 14 npm test
-
-# Test with Node.js 16
 nodapt use 16 npm test
-
-# Test with Node.js 18
 nodapt use 18 npm test
 ```
 
-### Scenario 3: Global Tool Installation
+---
 
-Install tools without affecting the system Node.js:
+### 场景 3：全局工具安装
 
 ```bash
-# Install a global tool
 nodapt npm install -g yarn
-
-# Use the installed tool
 nodapt yarn build
 ```
 
-## Error Handling
+---
 
-### Version Not Found
+## 错误处理
 
-If the specified version is not available:
+### 版本不存在
 
 ```bash
-$ nodapt use v14.17.0 node -v
 Error: Version v14.17.0 not found
-
-# Check available versions
-nodapt ls-remote | grep 14.17
 ```
 
-### Invalid Version Format
-
-If the user provides an invalid version format, ask for clarification:
+应提示用户查看可用版本：
 
 ```bash
-# User: "use version 14"
-# Assistant: "Would you like to use Node.js 14.x (latest minor version) or specifically v14.0.0?"
-
-# User: "remove the old version"
-# Assistant: "Please specify the exact version to remove, e.g., 'nodapt rm v14.17.0'"
+nodapt ls-remote
 ```
 
-### No Compatible Version Found
+---
 
-When auto-detection fails:
+### 版本格式无效
+
+当用户输入不规范版本时，应要求澄清，例如：
+
+- “你希望使用 14.x 最新版本，还是精确 v14.0.0？”
+
+---
+
+### 无兼容版本
+
+当自动匹配失败：
 
 ```bash
-$ nodapt node -v
-Error: No compatible Node.js version found for engines.node: ">=99.0.0"
-
-# Suggested action: Ask user to modify package.json or specify a version manually
+Error: No compatible Node.js version found
 ```
 
-## Installation Instructions
+应提示用户手动指定版本或修改 `package.json`。
 
-### Method 1: Using Cask (Recommended)
+---
+
+## 安装方式
+
+### 方式 1：Cask（推荐）
 
 ```bash
-$ cask install github.com/axetroy/nodapt
+cask install github.com/axetroy/nodapt
 ```
 
-### Method 2: Using npm
+### 方式 2：npm
 
 ```bash
-$ npm install -g nodapt
+npm install -g nodapt
 ```
 
-### Method 3: Manual Installation
+### 方式 3：手动安装
 
-Check the [source repository](https://github.com/axetroy/nodapt) for binary releases.
+参考源码仓库获取二进制版本。
 
-### Verify Installation
+验证安装：
 
 ```bash
 nodapt --version
 ```
 
-## Configuration
+---
 
-### Environment Variables
+## 配置
 
-Set custom Node.js mirror (useful in China):
+### 环境变量
 
 ```bash
-export NODE_MIRROR="https://registry.npmmirror.com/-/binary/node/"
+NODE_MIRROR=https://registry.npmmirror.com/-/binary/node/
+NODE_ENV_DIR=/custom/path/.nodapt
+DEBUG=1
 ```
 
-Set custom installation directory:
+---
+
+## 使用原则
+
+1. 优先检查 `package.json` 是否存在版本约束
+2. 优先使用自动版本选择
+3. CI 环境中必须使用明确版本
+4. 定期清理无用版本
+5. 使用语义化版本范围优先
+
+---
+
+## 故障排查
+
+### 命令未找到
+
+确认 nodapt 是否安装：
 
 ```bash
-export NODE_ENV_DIR="/custom/path/.nodapt"
-```
-
-Enable debug output:
-
-```bash
-export DEBUG=1
-nodapt node -v
-```
-
-## Best Practices
-
-1. **Always check for package.json**: Before running commands with nodapt, check if the project has a `package.json` with Node.js version constraints.
-
-2. **Use version ranges wisely**: When specifying versions, use semantic versioning ranges (e.g., `^16.14.0`, `>=14.0.0 <17.0.0`).
-
-3. **Prefer automatic selection**: Let nodapt auto-detect the version from `package.json` when possible.
-
-4. **Clean up old versions**: Periodically run `nodapt clean` to remove unused Node.js versions and free disk space.
-
-5. **Specify exact versions in CI/CD**: In automated environments, always specify exact versions to ensure reproducibility.
-
-## Troubleshooting
-
-### Issue: Command not found
-
-```bash
-# Ensure nodapt is installed
 which nodapt
-
-# If not found, reinstall
-npm install -g nodapt
 ```
 
-### Issue: Permission denied
+---
+
+### 权限问题
+
+检查安装权限或调整 npm prefix：
 
 ```bash
-# On Unix systems, check permissions
-ls -la $(which nodapt)
-
-# Or install without sudo using npm
 npm config set prefix ~/.npm-global
-export PATH=~/.npm-global/bin:$PATH
-npm install -g nodapt
 ```
 
-### Issue: Slow downloads
+---
+
+### 下载慢
+
+建议使用镜像：
 
 ```bash
-# Use Chinese mirror for faster downloads
-export NODE_MIRROR="https://registry.npmmirror.com/-/binary/node/"
-nodapt node -v
+export NODE_MIRROR=https://registry.npmmirror.com/-/binary/node/
 ```
 
-## Examples in Conversation
+---
 
-**User:** "Run my Node.js app"
-
-```bash
-# Assistant should check for package.json first
-nodapt node app.js
-```
-
-**User:** "Test with Node.js 18"
-
-```bash
-nodapt use 18 npm test
-```
-
-**User:** "Install dependencies"
-
-```bash
-nodapt npm install
-```
-
-**User:** "Which Node.js versions do I have installed?"
-
-```bash
-nodapt ls
-```
-
-**User:** "Remove Node.js 14"
-
-```bash
-nodapt rm v14.17.0
-```
-
-## Help Command
-
-For complete help information:
+## 帮助命令
 
 ```bash
 nodapt --help
 ```
 
-This displays all available commands, options, and examples.
+---
 
-## Source Code
+## 仓库地址
 
-Find the source code and report issues at:
-https://github.com/axetroy/nodapt
+[https://github.com/axetroy/nodapt](https://github.com/axetroy/nodapt)
