@@ -1,233 +1,162 @@
 ---
 name: code-modification-guidelines
-description: AI 助手在修改现有代码库时必须遵循的工作流与安全规则
+description: Use this skill whenever modifying an existing codebase. Ensure all changes are safe, minimal, backward compatible, and consistent with the existing project.
 ---
 
 # Code Modification Guidelines
 
-## 目标
+When modifying an existing codebase, follow these rules.
 
-本规范用于约束 AI 在修改现有代码时的行为，确保修改：
+## Core Principles
 
-- 安全
-- 可控
-- 最小化
-- 向后兼容
-- 不破坏系统稳定性
+### Make the smallest possible change
 
----
+ONLY modify code that is necessary to accomplish the user's request.
 
-# 一、核心原则
+NEVER:
 
-## 1. 最小变更原则
-
-仅允许修改为完成任务所必需的代码。
-
-禁止进行以下行为：
-
-- 修改无关代码
-- 重构未涉及的模块
-- 全局格式化或风格统一
-- 随意重命名变量或函数
-- 进行“顺手优化”或主观改进
+- Modify unrelated code.
+- Refactor unrelated modules.
+- Rename symbols without necessity.
+- Reformat existing code.
+- Perform subjective improvements or opportunistic optimizations.
 
 ---
 
-## 2. 向后兼容原则
+### Preserve existing behavior
 
-必须保持现有系统行为一致，除非用户明确要求变更。
+Unless the user explicitly requests otherwise, preserve the existing behavior.
 
-禁止：
+NEVER:
 
-- 修改函数签名或接口
-- 改变返回结构
-- 改变同步/异步行为
-- 修改错误处理逻辑
-- 删除或更改公共 API
-- 改变执行顺序或副作用
+- Change function signatures.
+- Change public APIs.
+- Change return values or structures.
+- Change synchronous or asynchronous behavior.
+- Change error handling semantics.
+- Change execution order or side effects.
 
-任何破坏性变更必须显式说明并确认。
-
----
-
-## 3. 行为透明原则
-
-所有行为变化必须是显式的，不得隐式改变逻辑。
-
-禁止：
-
-- 静默改变业务逻辑
-- 隐式优化行为
-- 未说明的兼容性调整
-- 未声明的行为修复
+Treat backward compatibility as the default.
 
 ---
 
-## 4. 安全优先原则
+### Preserve project conventions
 
-所有修改必须优先考虑系统稳定性与兼容性。
+Follow the project's existing conventions.
 
-高风险变更必须满足：
+ALWAYS:
 
-- 明确风险点
-- 明确影响范围
-- 明确回滚方式
-- 明确验证方式
+- Use the existing coding style.
+- Use the existing architecture.
+- Use the existing libraries and patterns.
 
----
-
-## 5. 可验证原则
-
-所有修改必须能够被验证其正确性。
-
-必须保证：
-
-- 修改结果可测试
-- 行为变化可观察
-- 边界情况可覆盖
-- 回归风险可检查
+NEVER introduce a different style or architecture unless explicitly requested.
 
 ---
 
-## 6. 风格一致原则
+### Make behavior changes explicit
 
-必须遵循项目现有代码风格，不得引入新的编码规范。
+Behavior changes MUST be intentional and visible.
 
-禁止：
+NEVER:
 
-- 改变整体代码风格
-- 引入新的架构范式
-- 统一格式化已有代码
-- 无必要的现代化改造
+- Silently change business logic.
+- Introduce undocumented behavior changes.
+- Assume requirements that were not stated.
 
----
-
-# 二、修改流程要求
-
-## 阶段 1：分析阶段（必须先执行）
-
-在任何代码修改之前，必须完成以下分析：
-
-### 1. 原始意图理解
-
-- 理解代码存在的目的
-- 理解业务语义
-- 理解上下文逻辑
-
-### 2. 依赖分析
-
-- 调用关系
-- 被依赖范围
-- 是否为公共接口
-
-### 3. 影响范围分析
-
-- 涉及模块
-- 潜在副作用
-- 运行时影响
-
-### 4. 风险评估
-
-必须对变更进行风险分级：
-
-- 低风险：局部、无行为变化
-- 中风险：可能影响部分调用链
-- 高风险：可能影响系统行为或接口
+If a requested change is potentially breaking, clearly explain the impact before implementing it.
 
 ---
 
-## 阶段 2：方案确认
+### Prefer safety over optimization
 
-在实施修改前必须完成方案确认，包括：
+System stability is more important than code cleanliness.
 
-- 修改目的是否清晰
-- 修改范围是否最小
-- 是否存在替代方案
-- 是否存在破坏性变更
-- 是否具备回滚路径
+When in doubt:
 
-未确认方案不得进入代码修改阶段。
+- Prefer conservative changes.
+- Prefer compatibility.
+- Prefer predictable behavior.
 
 ---
 
-## 阶段 3：执行修改
+## Required Workflow
 
-执行修改时必须遵守：
+Before modifying code:
 
-- 只修改必要代码
-- 不修改无关逻辑
-- 保持原有结构稳定
-- 保留旧行为兼容性
-- 避免跨模块连锁修改
-- 修改必须具备明确理由
+1. Understand the purpose of the existing code.
+2. Understand its dependencies.
+3. Evaluate the scope of the change.
+4. Consider possible side effects.
 
-允许的行为仅限于：
+During implementation:
 
-- 修复明确 bug
-- 补充缺失依赖
-- 删除已确认未使用代码
-- 添加必要防御性逻辑
+- Change only what is necessary.
+- Keep unrelated logic untouched.
+- Minimize the affected scope.
+- Avoid cascading modifications across modules.
 
----
+After implementation:
 
-## 阶段 4：验证要求
-
-所有修改必须满足验证要求：
-
-- 修改行为可验证
-- 影响范围可确认
-- 回归风险可评估
-- 可通过测试或观察验证正确性
+- Ensure the change is testable.
+- Ensure behavioral changes are observable.
+- Consider regression risks.
 
 ---
 
-# 三、禁止行为
+## Allowed Changes
 
-严格禁止以下行为：
+Typical acceptable changes include:
 
-- 擅自重写功能正常代码
-- 修改未涉及的文件或模块
-- 改变公共接口或契约
-- 引入新框架或依赖
-- 未经说明改变逻辑行为
-- 删除未确认安全的代码
-- 改变代码整体风格
-- 进行大范围结构重构
-- 做出无明确需求的优化
-- 假设用户未说明的需求
+- Fixing confirmed bugs.
+- Implementing the user's requested behavior.
+- Adding required defensive checks.
+- Removing confirmed dead code.
+- Adding missing dependencies required for the requested change.
 
 ---
 
-# 四、语言一致性约束
+## Prohibited Changes
 
-不同语言必须保持其原有语义和工程约束：
+NEVER:
 
-- JavaScript / TypeScript：保持 this 与异步行为一致
-- Python：遵循既有风格与语义，不强制重排结构
-- Java：保持包结构与序列化兼容性
-- Go：保持错误处理模式一致
-- Rust：避免不必要的生命周期变化
-- C/C++：不得改变内存语义
-- Shell：不得改变退出状态或环境行为
+- Rewrite working code without a clear reason.
+- Modify unrelated files.
+- Introduce unnecessary dependencies.
+- Replace existing libraries or frameworks.
+- Perform large-scale refactoring.
+- Change project-wide coding style.
+- Modernize code without being asked.
+- Introduce breaking changes without explanation.
+- Infer or implement requirements that the user did not specify.
+
+---
+
+## Language-Specific Rules
+
+Respect the semantics of the target language.
+
+Examples:
+
+- JavaScript / TypeScript: Preserve `this` binding and asynchronous behavior.
+- Python: Preserve existing structure and coding style.
+- Java: Preserve package structure and serialization compatibility.
+- Go: Preserve the existing error handling pattern.
+- Rust: Avoid unnecessary lifetime changes.
+- C / C++: Preserve memory semantics.
+- Shell: Preserve exit codes and environment behavior.
 
 ---
 
-# 五、附加原则
+## Summary
 
-## 1. 不确定性原则
+When modifying existing code:
 
-当需求或影响不明确时，应倾向于保守修改，而不是扩展修改范围。
-
-## 2. 显式优于隐式
-
-任何行为变化必须显式体现，不得依赖“默认优化”。
-
-## 3. 稳定性优先
-
-在功能正确性与系统稳定性之间，优先保证稳定性。
-
-## 4. 可回滚性
-
-任何修改都必须可以安全撤销，不应造成不可逆影响。
-
----
+- ALWAYS understand before changing.
+- ALWAYS minimize the scope of changes.
+- ALWAYS preserve existing behavior by default.
+- ALWAYS follow the project's conventions.
+- NEVER modify unrelated code.
+- NEVER introduce unnecessary refactoring.
+- NEVER make implicit behavior changes.
+- NEVER assume requirements that the user did not specify.

@@ -1,231 +1,180 @@
 ---
 name: ripgrep
-description: 使用 ripgrep(rg) 在代码仓库中进行高速搜索、定位文件、查找代码引用和分析项目结构。
+description: Use ripgrep (rg) for fast codebase search, symbol lookup, reference discovery, and project analysis.
 ---
 
-# ripgrep 搜索技能
+# ripgrep
 
-## 用途
+Use `rg` as the default search tool for source code.
 
-使用 `rg` 作为代码仓库默认搜索工具。
+## When to Use
 
-适用于：
+Use `rg` whenever you need to:
 
-- 查找函数、类、变量定义
-- 查找代码引用
-- 搜索配置项
-- 搜索 API、环境变量
-- 分析项目结构
-- 辅助代码重构
+- Find files.
+- Locate symbols.
+- Search code references.
+- Search configuration values.
+- Find environment variables.
+- Analyze project structure.
+- Estimate the impact of code changes.
 
-## 基本规则
+Prefer `rg` over `grep`, `find | grep`, or other recursive search tools.
 
-优先使用：
+---
 
-```bash
-rg "关键词"
-```
+## Search Rules
 
-不要使用：
+### Prefer precise searches
 
-```bash
-grep -r
-find | grep
-```
+Search for the exact identifier whenever possible.
 
-除非 rg 不适用。
-
-## 搜索原则
-
-### 1. 优先精确搜索
-
-推荐：
-
-```bash
-rg "UserService"
-```
-
-不要：
-
-```bash
-rg ".*UserService.*"
-```
-
-### 2. 限制目录
-
-已知目录时：
-
-```bash
-rg "关键词" src/
-```
-
-### 3. 限制文件类型
-
-根据项目类型过滤：
-
-```bash
-rg "关键词" -t js
-rg "关键词" -t ts
-rg "关键词" -t py
-```
-
-避免扫描无关文件。
-
-### 4. 保留忽略规则
-
-默认遵守：
-
-- .gitignore
-- .ignore
-- .rgignore
-
-不要默认使用：
-
-```bash
-rg -uuu
-```
-
-只有明确需要搜索隐藏文件、生成文件时使用。
-
-## 常用操作
-
-### 查找文件
-
-```bash
-rg --files
-```
-
-### 查找定义
-
-```bash
-rg -n "class User"
-rg -n "function xxx"
-```
-
-### 查找引用
-
-```bash
-rg -n "函数名"
-```
-
-### 搜索配置
-
-```bash
-rg -n "API_URL"
-rg -n "TOKEN"
-```
-
-### 搜索 TODO
-
-```bash
-rg -n "TODO|FIXME"
-```
-
-## 正则规则
-
-默认使用普通正则。
-
-只有需要以下能力时使用：
-
-```bash
-rg -P
-```
-
-例如：
-
-- 后向引用
-- lookahead
-- lookbehind
-
-## 多行搜索
-
-只有跨行匹配时使用：
-
-```bash
-rg -U
-```
-
-不要默认开启。
-
-## 代码分析流程
-
-查找功能实现时：
-
-1. 搜索关键词
-2. 找定义位置
-3. 找调用位置
-4. 找测试代码
-5. 分析影响范围
-
-示例：
+Preferred:
 
 ```bash
 rg -n "UserService"
 ```
 
-然后检查：
-
-- 定义文件
-- 调用方
-- 测试
-
-## 大项目规则
-
-大型仓库：
-
-1. 先缩小目录
-2. 再缩小文件类型
-3. 最后搜索内容
-
-推荐：
+Avoid unnecessarily broad patterns:
 
 ```bash
-rg "keyword" src/ -t ts
+rg ".*UserService.*"
 ```
 
-避免：
+---
+
+### Limit the search scope
+
+When the target location is known, search only the relevant directory.
+
+Example:
 
 ```bash
-rg "keyword" .
+rg -n "UserService" src/
 ```
 
-## 搜索不到结果
+---
 
-按顺序检查：
+### Filter by file type
 
-1. 关键词是否正确
-2. 目录是否正确
-3. 文件类型是否过滤过严
-4. 是否被 ignore
+Restrict the search to relevant source files whenever possible.
 
-最后才使用：
+Examples:
 
 ```bash
-rg -uuu "keyword"
+rg -n "UserService" -t ts
+
+rg -n "UserService" -t js
+
+rg -n "UserService" -t py
 ```
 
-## 输出要求
+Avoid scanning unrelated files.
 
-结果必须包含：
+---
 
-- 文件路径
-- 行号
+### Respect ignore files
 
-默认使用：
+By default, respect:
+
+- `.gitignore`
+- `.ignore`
+- `.rgignore`
+
+Do **not** use:
 
 ```bash
-rg -n
+rg -uuu
 ```
 
-## 禁止行为
+unless hidden, generated, or ignored files are explicitly required.
 
-不要：
+---
 
-- 扫描整个系统目录
-- 无限制执行超大范围搜索
-- 使用复杂正则替代简单关键词搜索
-- 删除 ignore 限制后直接修改文件
+## Common Operations
 
-## 目标
+Find files:
 
-使用最少扫描范围，快速定位准确代码位置。
+```bash
+rg --files
+```
+
+Find definitions:
+
+```bash
+rg -n "class User"
+
+rg -n "function login"
+```
+
+Find references:
+
+```bash
+rg -n "UserService"
+```
+
+Find configuration:
+
+```bash
+rg -n "API_URL"
+
+rg -n "TOKEN"
+```
+
+Find TODOs:
+
+```bash
+rg -n "TODO|FIXME"
+```
+
+---
+
+## Advanced Search
+
+Use PCRE (`-P`) only when advanced regular expressions are required.
+
+Use multiline mode (`-U`) only for true multiline searches.
+
+Avoid enabling either option by default.
+
+---
+
+## Search Workflow
+
+When investigating existing code:
+
+1. Find the definition.
+2. Find all references.
+3. Find related tests.
+4. Evaluate the impact before making changes.
+
+---
+
+## Best Practices
+
+ALWAYS:
+
+- Use `rg -n` to include line numbers.
+- Keep the search scope as small as possible.
+- Prefer exact identifiers over broad patterns.
+- Narrow directories before narrowing file types.
+
+NEVER:
+
+- Scan the entire filesystem.
+- Perform unnecessarily broad recursive searches.
+- Use complex regular expressions when a simple search is sufficient.
+- Disable ignore rules unless explicitly necessary.
+
+---
+
+## Summary
+
+When searching a codebase:
+
+- ALWAYS use `rg`.
+- ALWAYS include line numbers.
+- ALWAYS minimize the search scope.
+- ALWAYS respect ignore files.
+- NEVER perform unnecessarily broad searches.
+- NEVER use `grep -r` when `rg` is available.
