@@ -60,13 +60,20 @@ Rules for filling in the template:
 Workflow for turning raw commits into the final summary:
 
 1. List the commits within the resolved range.
-2. Read the commit subjects. For any commit whose meaning is unclear from the subject alone — ambiguous wording, generic messages, sweeping changes, or merge commits — inspect the actual diff instead of guessing:
+2. Filter out meaningless or noise commits — commits that carry no user-visible change in the final state, such as:
+   - Trivial `wip` / `temp` / `test again` commits.
+   - Whitespace-only or formatting-only changes.
+   - Auto-generated or tooling churn (generated files, lockfile-only noise, CI config bumps with no functional effect).
+   - Add-then-revert pairs that cancel each other out.
+   - Merge commits (they contain no change of their own).
+3. Group the remaining commits into logical change clusters. Commits that together implement or fix one thing belong to a single cluster — for example, a bug that was committed, patched, and finally fixed across several commits is ONE logical change, not several.
+4. Read the commit subjects. For any commit whose meaning is unclear from the subject alone — ambiguous wording, generic messages, sweeping changes, or merge commits — inspect the actual diff instead of guessing:
    - `git show <commit> --stat` for a quick overview of which files changed.
    - `git show <commit>` (or `git show <commit> --format=fuller`) for the full diff content.
    - `git log <baseline>..<end-point> -p` to walk through all diffs at once when the range is small.
-3. Summarize each commit into one short sentence (the per-commit summary), capturing what changed and why, based on the diff when the subject is insufficient.
-4. Consolidate the per-commit summaries into the overall summary following the "Output Template", merging related commits and grouping them under the correct sections.
-5. Attribute each consolidated item to the authors of the commits that contributed to it.
+5. Summarize each cluster into one short sentence (the per-change summary), capturing what changed and why, based on the diff when the subject is insufficient.
+6. Consolidate the cluster summaries into the overall summary following the "Output Template", merging related clusters and grouping them under the correct sections.
+7. Attribute each consolidated item to the authors of the commits that contributed to it.
 
 ## ALWAYS
 
@@ -83,6 +90,8 @@ Workflow for turning raw commits into the final summary:
 - MUST output the change records strictly following the "Output Template" (Keep a Changelog style); if there are clearly fewer actual changes than sections in the template, content must not be fabricated just to fill the sections.
 - MUST include the `<version>` and `<date>` header line in the output.
 - MUST, when sufficient information exists, merge duplicate, related, or multiple commits concerning the same feature into a single logical change item.
+- MUST filter out meaningless commits (trivial `wip`/`temp`, whitespace or formatting-only changes, auto-generated or tooling churn, add-then-revert pairs that cancel out) before summarizing.
+- MUST collapse commits that belong to the same logical change into a single item — for example, a bug fixed across several commits appears once, not once per commit.
 - MUST, when a commit message alone is ambiguous or insufficient, read the actual diff content (`git show <commit>`) before summarizing it, rather than guessing from the subject.
 - MUST attribute every output item to its contributor(s) using the actual Git author name in the form `(@<author>)`, and list all authors when an item combines commits from multiple people.
 - MUST distinguish between different types of changes, such as feature additions, feature modifications, bug fixes, refactoring, dependency upgrades, and build or engineering configuration changes.
@@ -164,6 +173,7 @@ change range = v1.9.0..v2.0.0
 - NEVER modify, create, or delete Git Tags to perform the analysis task, because the responsibility of this Skill is to read and summarize history, not to alter version history.
 - NEVER treat uncommitted working tree changes as Git commit changes unless the user explicitly requests that working tree differences also be analyzed.
 - NEVER invent or guess an `@` attribution; author names must come from the actual commit metadata (`git log --format=%an`), and must not be replaced with fabricated usernames.
+- NEVER present the same logical change more than once just because it was split across several commits, such as multiple `fix` commits for the same bug or add-then-revert pairs.
 
 ## Common Patterns
 
@@ -328,6 +338,43 @@ Do not output the complete commit list in the final result. Instead, consolidate
 - Update the xxx dependencies and build configuration. (@dave)
 ```
 
+### 6. Repeated or meaningless commits: deduplicate and filter
+
+When the same issue is fixed or iterated over several commits, or when the history is noisy, group them so each logical change appears exactly once:
+
+```bash
+git log <baseline>..<end-point> --oneline --no-merges
+git show <commit> --stat
+```
+
+Recognize repeated or meaningless commits:
+
+```text
+❌ The same bug was committed several times:
+- fix: xxx bug
+- fix: xxx bug again
+- fix: xxx bug properly
+
+❌ Meaningless commits:
+- wip
+- temp
+- test again
+- chore: format code
+- build: bump ci config (no functional effect)
+```
+
+Consolidate them into a single logical change item, keeping the final behavior:
+
+```markdown
+✅ ### Fixed
+- Fix the xxx bug under the xxx scenario. (@alice)
+
+✅ ### Changed
+- Optimize xxx code formatting and CI configuration. (@alice)
+```
+
+Do NOT repeat the same change once per commit.
+
 ## Notes
 
 - When no range is specified, `git describe --tags --abbrev=0 HEAD` is generally suitable for locating the most recent Tag reachable from the current `HEAD`, but "most recent" is based on the Git commit ancestry relationship and is not equivalent to simply sorting Tags by creation time.
@@ -344,6 +391,9 @@ Do not output the complete commit list in the final result. Instead, consolidate
 - The `@` attribution comes from the Git author name (`git log --format=%an`); it is not guaranteed to be the GitHub username. If the user wants actual GitHub handles, ask which mapping to use rather than guessing.
 - When an item consolidates commits by several people, list every author; when a commit was authored by someone other than the committer, prefer the author.
 - Reading diffs is recommended when commit messages are too terse to summarize reliably, when the range spans large refactors, or when the user explicitly asks for a thorough summary; for trivial, well-described commits it may be skipped for efficiency.
+- When deciding whether several commits are the same logical change, compare what files they touch and what the final state is; commits that fix the same bug usually touch the same area and share related subjects, while commits that just happen to be consecutive but change unrelated code must NOT be merged.
+- Filtering is a judgment call: a `chore` or `docs` commit can still be meaningful if it changes behavior or documentation users depend on. Do not drop commits merely because of their type prefix; drop them only when the change has no user-visible effect.
+- When in doubt about whether a change is meaningful, prefer keeping it (possibly as a minor item) rather than silently dropping it, and mention the filtering decision if it is substantial.
 - The output should focus on change records that the end user can read directly and should avoid exposing irrelevant Git command execution details.
 
 ## Output Language
