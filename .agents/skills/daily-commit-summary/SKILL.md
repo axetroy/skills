@@ -19,26 +19,24 @@ The user may have repositories in several locations, but all of them are reporte
 
 ## Workflow
 
-### 1. List all repositories with `gpm ls`
+### 1. Run the collector script (primary path)
 
-`gpm ls` (alias `gpm list`) already enumerates every directory managed by gpm, including all nested repositories, so there is no need to traverse the filesystem manually:
-
-```bash
-gpm ls
-# /Users/axetroy/gpm
-#     /Users/axetroy/gpm/github.com/axetroy/skills
-#     /Users/axetroy/gpm/github.com/axetroy/anti-redirect
-#     ...
-```
-
-Prefer the JSON form for reliable parsing:
+The bundled script performs steps 2–4 in one go and prints every repository with the user's commits since the given `--since` range. Run it first:
 
 ```bash
-gpm ls --json
-# {"root-a": ["<path>", ...], "root-b": ["<path>", ...]}
+scripts/daily-commit-summary.sh
+# == /path/to/gpm/github.com/axetroy/skills
+# 2bd5a01|2026-08-07 18:22:20 +0800|新增 daily-commit-summary 技能文档
+# ...
 ```
 
-Flatten all paths with python3 (or jq):
+Arguments (all optional): `[since] [author-name] [author-email]`. By default `since=midnight`, and the author is taken from `git config --global user.name` / `user.email`.
+
+If the script is missing or fails, fall back to the manual steps below. If the script returns nothing at all, report that there are no commits by the user in the requested range.
+
+### 2. Manual fallback: list all repositories with `gpm ls`
+
+`gpm ls` (alias `gpm list`) already enumerates every directory managed by gpm, including all nested repositories, so there is no need to traverse the filesystem manually. Prefer the JSON form for reliable parsing:
 
 ```bash
 gpm ls --json | python3 -c "import json,sys; [print(p) for v in json.load(sys.stdin).values() for p in v]"
@@ -46,29 +44,29 @@ gpm ls --json | python3 -c "import json,sys; [print(p) for v in json.load(sys.st
 
 If `gpm ls` fails or returns nothing, state this explicitly and ask the user for the directories to search instead.
 
-### 2. Filter to repositories modified within the last 24 hours
+### 3. Manual fallback: filter to repositories modified within the last 24 hours
 
-`gpm ls` reports every directory under the roots, which includes non-repository subdirectories (for example `.idea/inspectionProfiles` or package subdirectories). Two filters are applied here, in order of cheapness:
+`gpm ls` reports every directory under the roots, including non-repository subdirectories (for example `.idea/inspectionProfiles` or package subdirectories). Two filters are applied here, in order of cheapness:
 
 **a) Keep only real git repositories** — entries containing a `.git` directory or file:
 
 ```bash
-gpm ls | sed 's/^[[:space:]]*//' | while IFS= read -r d; do
+gpm ls --json | python3 -c "import json,sys; [print(p) for v in json.load(sys.stdin).values() for p in v]" | while IFS= read -r d; do
   [ -n "$d" ] && { [ -d "$d/.git" ] || [ -f "$d/.git" ]; } && echo "$d"
 done
 ```
 
-**b) Keep only repositories with a commit in the last 24 hours** — read the newest commit timestamp (cheap: one `git log` per repo, far cheaper than a full `--since` scan) and compare it to the cutoff:
+**b) Keep only repositories with activity in the last 24 hours.** Every commit bumps the reflog `.git/logs/HEAD`, so its filesystem mtime is a cheap proxy — no git process is needed to check it:
 
 ```bash
 now=$(date +%s); cutoff=$((now - 86400))
 while IFS= read -r d; do
-  ts=$(git -C "$d" log --all -1 --format=%ct 2>/dev/null)
+  ts=$(stat -f %m "$d/.git/logs/HEAD" 2>/dev/null)
   [ -n "$ts" ] && [ "$ts" -ge "$cutoff" ] && echo "$d"
 done
 ```
 
-The 24-hour window is intentionally wider than "today" so that commits made early in the day on an older machine timezone are not missed; the final "today" check in step 3 does the exact filtering.
+The 24-hour window is intentionally wider than "today" so that commits made early in the day on an older machine timezone are not missed; the exact "today" check in step 4 does the precise filtering.
 
 Deduplicate and canonicalize the survivors with:
 
@@ -78,25 +76,21 @@ git -C <repo> rev-parse --show-toplevel
 
 This resolves worktrees, submodules, and symlinks to a single canonical path per repository.
 
-### 3. Determine the current user's identity
+### 4. Manual fallback: determine the current user's identity and check today's commits
 
-The commits to collect are the ones authored by "me" (the current user). Resolve the identity from Git configuration:
+Resolve the identity from Git configuration:
 
 ```bash
 git config --global user.name
 git config --global user.email
 ```
 
-Keep both values, and use them as author filters when querying each repository.
-
-### 4. Check today's commits for each repository
-
-For each repository, query the commits authored by the current user since today started:
+For each surviving repository, query the commits authored by the current user since today started:
 
 ```bash
 git -C <repo> log --all --since="midnight" \
   --author="<user.name>" --author="<user.email>" \
-  --no-merges --pretty=format:"%h|%ad|%an|%s" --date=short
+  --no-merges --pretty=format:"%h|%ad|%s" --date=iso
 ```
 
 Notes on this command:
@@ -113,7 +107,9 @@ git -C <repo> show <commit> --stat
 git -C <repo> show <commit>
 ```
 
-### 5. Consolidate and summarize- Filter out meaningless commits (trivial `wip` / `temp`, formatting-only changes, add-then-revert pairs that cancel out).
+### 5. Consolidate and summarize
+
+- Filter out meaningless commits (trivial `wip` / `temp`, formatting-only changes, add-then-revert pairs that cancel out).
 - Merge repeated or related commits for the same logical change into a single item — a bug fixed across several commits appears once, not once per commit.
 - Group changes into logical change records per repository, then produce an overall summary across repositories.
 - The change records must come from the actual collected commits; do not invent features, fixes, or dependencies.
@@ -150,9 +146,8 @@ Rules for filling in the template:
 
 ## ALWAYS
 
-- MUST run `gpm ls` (or `gpm ls --json`) first to obtain the repository candidates.
-- MUST filter the `gpm ls` output to actual git repositories (entries containing a `.git` directory or file).
-- MUST apply the 24-hour modification filter (newest commit timestamp within the last 24 hours) before scanning commit histories.
+- MUST run `scripts/daily-commit-summary.sh` first (or `gpm ls --json` if the script is unavailable) to obtain the repositories and their today commits.
+- MUST apply the 24-hour modification filter (reflog mtime via `stat` on `.git/logs/HEAD`) before scanning commit histories, so that inactive repositories are skipped without spawning git.
 - MUST determine the current user's Git identity (`git config --global user.name` / `user.email`) and use it as the author filter.
 - MUST only count commits authored by the current user and recorded today; commits by others or on other days MUST NOT be included.
 - MUST base the summary on the actual collected commits and MUST NOT fabricate changes.
@@ -167,6 +162,7 @@ Rules for filling in the template:
 - NEVER treat uncommitted working tree changes as committed changes unless the user explicitly asks for working-tree differences too.
 - NEVER guess which repositories were touched; only use repositories reported by `gpm ls` and confirmed to be git repositories.
 - NEVER assume every path from `gpm ls` is a repository; entries that do not contain a `.git` must be excluded.
+- NEVER run `find` over the whole filesystem tree to discover repositories; use `gpm ls` instead, which already excludes heavy directories such as `node_modules` and is far faster.
 - NEVER list every commit message verbatim and call it a summary; consolidate them into logical changes.
 - NEVER fabricate a daily summary when the repositories have no commits today; report the empty result honestly.
 - NEVER ignore a repository that had commits just because it is deeply nested, in a worktree, or accessed via a symlink; resolve and include it.
@@ -174,18 +170,16 @@ Rules for filling in the template:
 
 ## Notes
 
-- `gpm ls` enumerates every directory under the configured roots (including non-repository subdirectories), so the results must be filtered to entries that contain a `.git` directory or file.
-- `gpm ls` does not require manual filesystem traversal and already excludes heavy directories such as `node_modules`.
 - `gpm ls --json` returns a JSON object mapping each root to its list of paths; use it for reliable parsing.
-- The 24-hour modification filter uses the newest commit timestamp (`git log --all -1 --format=%ct`) so only recently active repositories are scanned in depth, keeping the process fast on large setups.
+- The bundled script `scripts/daily-commit-summary.sh` collapses steps 1–4 into one command. It prints `== <repo>` followed by that repo's matching commits, one per line as `<short-hash>|<iso-date>|<subject>`.
+- The 24-hour modification filter uses the reflog mtime (`.git/logs/HEAD`) as a cheap proxy for the newest commit: a `stat` call per repo instead of a full `git log`, so only recently active repositories are scanned in depth. On a typical setup this drops the filter from ~5s to ~1s.
 - The 24-hour window is wider than "today" on purpose: it avoids missing commits made early in the day, and the exact "today" check happens later with `--since="midnight"`.
-- Repositories can be nested several levels deep (for example `<root>/github.com/owner/repo`); `gpm ls` covers all of them.
-- `.git` may be a directory or a file (worktrees, submodules); either marks a repository root.
+- If `.git/logs/HEAD` is missing (fresh clone, bare repo), fall back to `git log --all -1 --format=%ct` for that repository rather than skipping it.
 - The identity used by `--author` should match what appears in commit author lines; if the user has multiple identities, ask which one to use.
 - If `git log --since="midnight"` returns nothing for every repository, report that there are no commits by the user today.
 - When a repository is huge or the range is large, `git log --stat` or targeted `git show` calls are preferable to dumping full diffs.
 - The output should focus on what the user can read directly; do not include irrelevant command execution details.
-- If the user asks for a specific range (e.g. "since last Friday", "in the last week"), replace `--since="midnight"` with the requested time range.
+- If the user asks for a specific range (e.g. "since last Friday", "in the last week"), pass it as the first argument to the script or replace `--since="midnight"` in the manual commands.
 
 ## Output Language
 
