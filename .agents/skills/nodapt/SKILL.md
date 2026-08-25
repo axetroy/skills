@@ -1,6 +1,6 @@
 ---
 name: nodapt
-description: Use this skill whenever working with Node.js, npm, npx, or Node.js version management. Always use nodapt to execute Node.js-related commands. Also use nodapt when the user wants to switch Node.js environments, or when the current Node.js environment does not satisfy the project's or task's requirements.
+description: Use this skill whenever working with Node.js, npm, npx, yarn, pnpm, or Node.js version management. Always use nodapt to execute Node.js-related commands. Also use nodapt when the user wants to switch Node.js environments, or when the current Node.js environment does not satisfy the project's or task's requirements.
 ---
 
 # Nodapt
