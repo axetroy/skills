@@ -51,7 +51,7 @@ https://hacker-news.firebaseio.com/v0/item/<id>.json
 
 | 字段          | 说明                 | 是否必需               |
 | ------------- | -------------------- | ---------------------- |
-| `title`       | 标题                 | 必需（缺失则跳过该条） |
+| `title`       | 标题（原文）         | 必需（缺失则跳过该条） |
 | `url`         | 原文链接             | 可选（缺失时降级处理） |
 | `by`          | Hacker News 用户名   | 可选                   |
 | `score`       | 当前得分             | 可选                   |
@@ -66,55 +66,30 @@ https://hacker-news.firebaseio.com/v0/item/<id>.json
 https://news.ycombinator.com/item?id=<id>
 ```
 
-### 步骤 4：输出结果
+### 步骤 4：抓取文章并生成摘要
 
-严格按照 Hacker News API 返回的排名顺序输出，**不得自行排序**。
+对于每条有 `url` 的有效 Story：
 
-#### 英文格式示例
+1. **抓取文章内容**：请求 `url` 对应的网页，提取正文内容。
+   - 优先抓取文章的主体内容区域（排除导航、广告、侧边栏等噪音）。
+   - 若无法确定正文区域，抓取页面全部文本并过滤短片段，保留有意义的内容段落。
+   - 请求时应设置合理的超时（建议 5 秒）和 User-Agent。
+2. **生成摘要**：基于抓取到的正文内容，生成一段简洁的中文摘要。
+   - 摘要长度控制在 3～5 句话以内。
+   - 摘要应概括文章的核心观点、主要结论或关键信息。
+   - 若抓取失败、内容为空或无法生成有意义摘要，**不展示摘要字段**，继续输出其余信息。
+3. **原文标题保留**：将原始英文标题完整保留，并额外提供中文翻译后的标题用于展示。若原文已是中文标题，直接使用该标题。
 
-```markdown
-## Hacker News Top 20
+### 步骤 5：始终使用中文输出
 
-1. **[Story title](story-url)**
-   - Score: 123
-   - Comments: 45
-   - Author: username
-   - HN: https://news.ycombinator.com/item?id=123456
+无论用户使用何种语言提问，**所有输出内容必须使用中文**。
 
-2. **[Story title](story-url)**
-   - Score: 98
-   - Comments: 32
-   - Author: username
-   - HN: https://news.ycombinator.com/item?id=123457
+- 标题需同时展示**原文**和**中文翻译**（若原文为中文则直接使用）。
+- 摘要必须为中文。
+- 所有说明文字、字段标签均使用中文。
+- 原文链接、作者名、HN 链接等不可翻译的字段保持原样。
 
-...
-```
-
-#### 中文格式示例
-
-若用户使用中文提问，使用以下中文字段格式：
-
-```markdown
-## Hacker News 热门 Top 20
-
-1. **标题**
-   - 🔥 得分：123
-   - 💬 评论：45
-   - 👤 作者：username
-   - 🔗 原文：https://example.com/article
-   - 📎 HN：https://news.ycombinator.com/item?id=123456
-
-2. **标题**
-   - 🔥 得分：98
-   - 💬 评论：32
-   - 👤 作者：username
-   - 🔗 原文：https://example.com/another
-   - 📎 HN：https://news.ycombinator.com/item?id=123457
-
-...
-```
-
-### 步骤 5：标注数据时效
+### 步骤 6：标注数据时效
 
 每次执行技能时都必须**实时重新请求** Hacker News API。
 
@@ -127,6 +102,38 @@ https://news.ycombinator.com/item?id=<id>
 ```
 
 - 若可可靠获取当前时间，可同时注明数据获取的具体时间。
+
+### 步骤 7：输出结果
+
+严格按照 Hacker News API 返回的排名顺序输出，**不得自行排序**。
+
+所有输出内容必须使用中文。标题需同时展示原文与中文翻译，并附上文章摘要。格式如下：
+
+```markdown
+## Hacker News 热门 Top 20
+
+1. **【原文】Story Title — 中文翻译标题** [原文链接](url)
+   - 🔥 得分：123
+   - 💬 评论：45
+   - 👤 作者：username
+   - 📝 摘要：这是一段对文章核心内容的中文摘要，概括主要观点或关键信息。
+   - 📎 HN：https://news.ycombinator.com/item?id=123456
+
+2. **【原文】Another Headline — 另一个标题翻译** [原文链接](url)
+   - 🔥 得分：98
+   - 💬 评论：32
+   - 👤 作者：username
+   - 📝 摘要：文章介绍了某项新技术的工作原理及其应用场景。
+   - 📎 HN：https://news.ycombinator.com/item?id=123457
+
+...
+```
+
+**特殊情况的输出：**
+
+- 若文章摘要无法获取，省略 `- 📝 摘要：` 行，其余字段照常输出。
+- 若原文标题已是中文，直接使用该标题，无需额外标注【原文】。
+- 若原文链接缺失（如 Ask HN），原文部分为空，仅展示翻译后的标题（或直接使用原标题）。
 
 ## 错误处理
 
@@ -160,6 +167,7 @@ https://hacker-news.firebaseio.com/v0/topstories.json
 | `score` 缺失       | 显示 `N/A`                                                |
 | `descendants` 缺失 | 显示 `N/A`                                                |
 | `title` 缺失       | **跳过该条 Story**，不展示                                |
+| 文章摘要抓取失败   | 省略 `- 📝 摘要：` 行，其余字段照常输出                   |
 
 ## 重要规则
 
@@ -172,6 +180,8 @@ https://hacker-news.firebaseio.com/v0/topstories.json
 7. **无需获取评论树**：`descendants` 字段已提供 Story 的评论总数，无需进一步获取评论详情。
 8. **无需获取用户详情**：`by` 字段已提供作者用户名，无需额外请求用户接口。
 9. **HTML 安全处理**：Hacker News API 的 Story 标题可能包含 HTML 内容；展示时应进行适当的 HTML 解码，并将特殊字符转义以防止 XSS。
+10. **始终中文输出**：无论用户使用何种语言提问，所有输出内容（包括标题、摘要、说明文字）必须使用中文。原文标题需完整保留。
+11. **文章摘要**：对于有原文链接的 Story，必须抓取文章正文并生成简洁的中文摘要（3～5 句话）。抓取失败时省略摘要行，不影响其他字段输出。
 
 ## 示例交互
 
@@ -186,8 +196,9 @@ https://hacker-news.firebaseio.com/v0/topstories.json
 1. 请求 `https://hacker-news.firebaseio.com/v0/topstories.json`，获取前 20 个 Story ID。
 2. 并发或依次请求 20 个 `https://hacker-news.firebaseio.com/v0/item/<id>.json`，获取每条 Story 详情。
 3. 过滤无效条目，提取所需字段。
-4. 按 API 返回的原始排名顺序整理，输出中文格式的 Top 20 列表。
-5. 在结果开头附上时效说明。
+4. 对有 `url` 的 Story，抓取文章正文并生成简洁的中文摘要（3～5 句话）。
+5. 按 API 返回的原始排名顺序整理，**始终使用中文**输出 Top 20 列表，标题同时展示原文与中文翻译，并附上摘要。
+6. 在结果开头附上时效说明。
 
 > ⚠️ 不要将 API 的原始 JSON 数据直接输出给用户，除非用户明确要求查看原始接口数据。
 
